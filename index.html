@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="./js/main.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="login-container" id="login-container"> 
+        <div class="login-box"> 
+            <div class="logo">
+                <h1> web editor </h1>
+            </div>
+
+            <div class="login-tab">
+                <div class="login-tab active" data-tab="login">login</div>
+                <div class="login-tab" data-tab="register">register</div>
+            </div>
+
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Username</label> 
+                    <input type="text" id="login-username" placeholder="Enter your Username" required>
+                </div>
+             
+                <div class="form-group">
+                    <label>Password</label> 
+                    <input type="password" id="login-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn">Sign in</button>
+            </form> 
+
+            <form id="register-form" style="display: none;">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="register-username" placeholder="Enter new Username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="register-password" placeholder="Create password" required>
+                </div>
+                 <div class="form-group">
+                    <label> Confrim password</label>
+                    <input type="password" id="register-confirm" placeholder="Confirm password" required>
+                </div>
+                <button type="submit" class="submit-btn">submit</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

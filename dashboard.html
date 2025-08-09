@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/dashboard.js" defer></script>
+   
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Welcome, <span id="userName">User</span>!</h1>
+            <button class="logoutBtn" onclick="Logout()">Logout</button>
+            <button class="saveBtn" onclick="saveHistory()">Save Site</button>
+            <button class="loadBtn" onclick="loadProject()">Load Project</button>
+        </header>
+        <nav class="dashboard-nav">
+            <button id="bannerEditorBtn">Banner Editor</button>
+            <button id="landingEditorBtn">Landing Page Editor</button>
+            <button id="marketingEditorBtn">Marketing Page Editor</button>
+        </nav>
+        <section id="mainView" class="main-view">
+            <div class="editor-toolbar">
+                <h2>Dashboard Overview</h2>
+                <p>Select an editor to get started.</p>
+            </div>
+            <div id="bannerWorkspace" class="workspace">
+                <p>Workspace Preview</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
