@@ -1,14 +1,8 @@
-
-
-
 let activeDrop = null;
 const DEBUG_DND = false;
 const logDND = (...a) => DEBUG_DND && console.log('[DND]', ...a);
-
-
 document.addEventListener('dragover', e => e.preventDefault(), { passive: false });
 document.addEventListener('drop',     e => e.preventDefault(), { passive: false });
-
 document.addEventListener('DOMContentLoaded', () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
   document.getElementById('userName').textContent = currentUser?.username || "Guest";
@@ -21,22 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (landingBtn) landingBtn.addEventListener('click', loadLandingEditor);
   if (marketingBtn) marketingBtn.addEventListener('click', loadMarketingEditor);
 });
-
-// -------- Auth / Save / Load --------
+//logout/saveing/and loading - start
 function Logout() {
   localStorage.removeItem('currentUser');
   window.location.href = "index.html";
 }
-
 function saveHistory() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { username: "Guest" };
   const workspace = document.getElementById('bannerWorkspace');
-  if (!workspace) return alert("No banner editor content found to save!");
+  if (!workspace) return alert("No editor content found to save!");
 
   const rawName = prompt("Enter project name", "My project");
-  // If user clicked Cancel, do nothing
+ 
   if (rawName === null) {
-    // optional: alert("Save canceled.");
     return;
   }
   const projectName = rawName.trim();
@@ -44,9 +35,7 @@ function saveHistory() {
     alert("Project name can't be empty. Save canceled.");
     return;
   }
-
-  const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
-
+  const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');//saved project array
   const projectData = {
     id: Date.now() + '-' + Math.floor(Math.random() * 1000),
     user: currentUser.username,
@@ -54,12 +43,10 @@ function saveHistory() {
     content: workspace.innerHTML,
     timestamp: new Date().toLocaleString()
   };
-
   savedProjects.push(projectData);
   localStorage.setItem('savedProjects', JSON.stringify(savedProjects));
   alert(`Project "${projectName}" saved to localStorage!`);
 }
-
 function loadProject() {
   const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
   if (savedProjects.length === 0) return alert("No saved projects found!");
@@ -70,7 +57,7 @@ function loadProject() {
   });
 
   const rawChoice = prompt(message, "1");
-  if (rawChoice === null) return; // user canceled
+  if (rawChoice === null) return; 
 
   const choice = parseInt(rawChoice, 10) - 1;
   if (isNaN(choice) || choice < 0 || choice >= savedProjects.length) {
@@ -88,18 +75,16 @@ function loadProject() {
       ${savedProjects[choice].content}
     </div>
   `;
-
-  // …(rebind your buttons + make things draggable as you already do)…
   alert(`Loaded project: ${savedProjects[choice].name}`);
 }
+//logout/saveing/and loading - end
 
+//banner editor functions - start
 
-// -------- Banner Editor --------
 function loadBannerEditor() {
   activeDrop = 'banner';
   const toolbar = document.querySelector('.editor-toolbar');
   if (!toolbar) return;
-
   toolbar.innerHTML = `
     <h2>Banner Editor</h2>
     <div class="banner-toolbar">
@@ -132,7 +117,6 @@ function loadBannerEditor() {
   `;
   setupBannerDragDrop();
 }
-
 function setupBannerDragDrop() {
   const bannerShapes = document.querySelectorAll('.banner-shape');
   const workspace = document.getElementById('bannerWorkspace');
@@ -164,7 +148,6 @@ function setupBannerDragDrop() {
     }
   };
 }
-
 function createBannerElement(size, workspace) {
   const banner = document.createElement('div');
   banner.classList.add('banner');
@@ -207,58 +190,6 @@ function createBannerElement(size, workspace) {
     enableBannerEditing(banner);
   });
 }
-
-function saveWorkspaceToStorage() {
-  const workspace = document.getElementById('bannerWorkspace');
-  if (workspace) {
-    localStorage.setItem('currentWorkspaceContent', workspace.innerHTML);
-  }
-}
-function makeDraggable(element, workspace) {
-  element.setAttribute('draggable', 'false');
-  element.addEventListener('dragstart', (e) => e.preventDefault());
-
-  let isDragging = false;
-  let offsetX = 0, offsetY = 0;
-
-  element.addEventListener('mousedown', (e) => {
-    const fromHandle = e.target.closest('.drag-handle');
-    const isImageBody = element.tagName === 'IMG' && e.target === element;
-    const interactive = e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName);
-
-    if (!fromHandle && !isImageBody && !e.ctrlKey) {
-      // when clicking text/inputs without handle/Ctrl, just edit
-      if (interactive) return;
-      // clicking non-interactive part of a div still needs handle or Ctrl
-      return;
-    }
-
-    e.preventDefault();
-    isDragging = true;
-    offsetX = e.clientX - element.offsetLeft;
-    offsetY = e.clientY - element.offsetTop;
-    element.style.cursor = 'grabbing';
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    const x = e.clientX - offsetX;
-    const y = e.clientY - offsetY;
-
-    const wsRect = workspace.getBoundingClientRect();
-    const elRect = element.getBoundingClientRect();
-
-    element.style.left = Math.max(0, Math.min(x, wsRect.width  - elRect.width)) + 'px';
-    element.style.top  = Math.max(0, Math.min(y, wsRect.height - elRect.height)) + 'px';
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (isDragging) saveWorkspaceToStorage();
-    isDragging = false;
-    element.style.cursor = 'grab';
-  });
-}
-
 function enableBannerEditing(banner) {
   const editPanel = document.querySelector('.banner-edit-panel');
   if (!editPanel) return;
@@ -291,15 +222,57 @@ function enableBannerEditing(banner) {
     banner.remove(); editPanel.style.display = 'none'; saveWorkspaceToStorage();
   };
 }
+//banner editor functions - end
 
+function saveWorkspaceToStorage() {
+  const workspace = document.getElementById('bannerWorkspace');
+  if (workspace) {
+    localStorage.setItem('currentWorkspaceContent', workspace.innerHTML);
+  }
+}
+function makeDraggable(element, workspace) {
+  element.setAttribute('draggable', 'false');
+  element.addEventListener('dragstart', (e) => e.preventDefault());
+  let isDragging = false;
+  let offsetX = 0, offsetY = 0;
+  element.addEventListener('mousedown', (e) => {
+    const fromHandle = e.target.closest('.drag-handle');
+    const isImageBody = element.tagName === 'IMG' && e.target === element;
+    const interactive = e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName);
+    if (!fromHandle && !isImageBody && !e.ctrlKey) {
+      if (interactive) return;
+      return;
+    }
+    e.preventDefault();
+    isDragging = true;
+    offsetX = e.clientX - element.offsetLeft;
+    offsetY = e.clientY - element.offsetTop;
+    element.style.cursor = 'grabbing';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const x = e.clientX - offsetX;
+    const y = e.clientY - offsetY;
+
+    const wsRect = workspace.getBoundingClientRect();
+    const elRect = element.getBoundingClientRect();
+
+    element.style.left = Math.max(0, Math.min(x, wsRect.width  - elRect.width)) + 'px';
+    element.style.top  = Math.max(0, Math.min(y, wsRect.height - elRect.height)) + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (isDragging) saveWorkspaceToStorage();
+    isDragging = false;
+    element.style.cursor = 'grab';
+  });
+}
 function rgbToHex(rgb) {
   if (!rgb) return '#008cff';
   const result = rgb.match(/\d+/g);
   if (!result) return '#008cff';
   return "#" + result.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
 }
-
-// -------- Landing Editor --------
+//landing editor functions - start
 function loadLandingEditor() {
   activeDrop = 'landing';
   const toolbar = document.querySelector('.editor-toolbar');
@@ -338,9 +311,7 @@ function loadLandingEditor() {
   normalizeLandingNodes(document.getElementById('bannerWorkspace'));
 
 }
-// after you re-enable dragging/editing on loaded content:
 normalizeLandingNodes(document.getElementById('bannerWorkspace'));
-
 function setupLandingDragDrop() {
   const components = document.querySelectorAll('.landing-component');
   const workspace = document.getElementById('bannerWorkspace');
@@ -404,7 +375,6 @@ function setupLandingDragDrop() {
     saveWorkspaceToStorage();
   }, true);
 }
-
 function createLandingElement(type, workspace, x, y) {
   let el;
 
@@ -473,7 +443,6 @@ function createLandingElement(type, workspace, x, y) {
   // save on edits
   editable.addEventListener('input', saveWorkspaceToStorage);
 }
-
 function createImageElement(src, workspace, x, y){
   const img = document.createElement('img');
   img.src = src;
@@ -504,8 +473,6 @@ function createImageElement(src, workspace, x, y){
 
   saveWorkspaceToStorage();
 }
-
-
 function enableLandingEditing(element) {
   if (element.tagName === 'IMG' || element.tagName === 'FORM') return; // handled elsewhere
 
@@ -517,9 +484,7 @@ function enableLandingEditing(element) {
     editable.addEventListener('input', saveWorkspaceToStorage);
   }
 }
-
 let mkSavedRange = null;
-
 function normalizeLandingNodes(root = document) {
   root.querySelectorAll('.landing-element').forEach(el => {
     // already normalized?
@@ -543,6 +508,9 @@ function normalizeLandingNodes(root = document) {
     attachCommonChrome(el);
   });
 }
+//landing editor functions - end
+
+//marketing editor functins - start
 function bindMarketingSelectionMemory(canvas) {
   if (!canvas) return;
   const save = () => {
@@ -560,7 +528,6 @@ function bindMarketingSelectionMemory(canvas) {
     }
   });
 }
-
 function restoreMarketingSelection(canvas) {
   const sel = window.getSelection();
   if (mkSavedRange) {
@@ -570,7 +537,6 @@ function restoreMarketingSelection(canvas) {
     canvas.focus();
   }
 }
-
 function loadMarketingEditor() {
   activeDrop = null; // no DnD here
 
@@ -704,7 +670,6 @@ function loadMarketingEditor() {
     saveHistory();
   });
 }
-
 function addDragHandle(el) {
   if (el.querySelector('.drag-handle')) return;
 
@@ -728,17 +693,14 @@ function addDragHandle(el) {
     zIndex: '3'
   });
 
-  // ensure positioned container
+  
   el.style.position = 'absolute';
   el.appendChild(h);
 }
-
 function attachCommonChrome(el) {
   addDeleteButton(el);
   addDragHandle(el);
 }
-
-
 function addDeleteButton(el) {
   if (el.querySelector('.element-delete-btn')) return;
 
@@ -772,12 +734,10 @@ function addDeleteButton(el) {
 
   el.appendChild(b);
 }
-
 function attachCommonChrome(el) {
   addDeleteButton(el);
   addDragHandle(el);
 }
-
 function addDeleteButton(el) {
   if (el.querySelector('.element-delete-btn')) return;
   const b = document.createElement('button');
@@ -791,12 +751,10 @@ function addDeleteButton(el) {
   });
   el.appendChild(b);
 }
-
 function attachCommonChrome(el) {
   addDeleteButton(el);
   addDragHandle(el);
 }
-
 function ensureEmailCanvas(workspace) {
   let canvas = document.getElementById('emailCanvas');
   if (canvas) return canvas;
@@ -813,7 +771,6 @@ function ensureEmailCanvas(workspace) {
   bindMarketingSelectionMemory(canvas);
   return canvas;
 }
-
 function removeMarketingTemplate() {
   const canvas = document.getElementById('emailCanvas');
   if (canvas && canvas.parentElement) {
@@ -822,7 +779,6 @@ function removeMarketingTemplate() {
     saveWorkspaceToStorage();
   }
 }
-
 /* Apply one of 3 templates INTO the existing marketing canvas */
 function applyTemplateIntoCanvas(n) {
   const c = document.getElementById('emailCanvas');
@@ -888,7 +844,6 @@ function applyTemplateIntoCanvas(n) {
 
   saveWorkspaceToStorage();
 }
-
 /* Style current selection or current block */
 function applyInlineStyle(prop, value) {
   const canvas = document.getElementById('emailCanvas');
@@ -926,6 +881,4 @@ function applyInlineStyle(prop, value) {
 
   saveWorkspaceToStorage();
 }
-
-
-
+//marketing editor functions - end
