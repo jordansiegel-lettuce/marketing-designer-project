@@ -138,7 +138,7 @@ function setupBannerDragDrop() {
 
   workspace.ondragenter = allow;
   workspace.ondragover  = allow;
-  workspace.ondrop = (e) => {
+  workspace.ondrop = (e) => {// creates a benner with the matching function on drop
     if (activeDrop !== 'banner') return;
     e.preventDefault(); e.stopPropagation();
     const bannerSize = e.dataTransfer.getData('bannerSize');
@@ -178,13 +178,11 @@ function createBannerElement(size, workspace) {
 
   banner.appendChild(content);
   workspace.appendChild(banner);
-  attachCommonChrome(banner);           // ✖ + handle on the container
+  attachCommonChrome(banner);           
   makeDraggable(banner, workspace);
 
-  // save when typing in content
   content.addEventListener('input', saveWorkspaceToStorage);
-
-  // click to show panel
+ 
   banner.addEventListener('click', (e) => {
     e.stopPropagation();
     enableBannerEditing(banner);
@@ -193,20 +191,16 @@ function createBannerElement(size, workspace) {
 function enableBannerEditing(banner) {
   const editPanel = document.querySelector('.banner-edit-panel');
   if (!editPanel) return;
-
   const content = banner.querySelector('.banner-content');
-
   banner.style.outline = '2px solid #00ffff';
   editPanel.style.display = 'block';
-
-  // — bind to CONTENT, not the container
   document.getElementById('bannerTextInput').value = content.textContent;
   document.getElementById('bannerBgColorInput').value   = rgbToHex(banner.style.backgroundColor || '#008cff');
   document.getElementById('bannerTextColorInput').value = rgbToHex(getComputedStyle(content).color || '#008cff');
   document.getElementById('bannerFontSizeInput').value  = parseInt(getComputedStyle(content).fontSize) || 12;
   document.getElementById('bannerFontStyleSelect').value = content.style.fontStyle || 'normal';
   document.getElementById('bannerBorderSelect').value    = banner.style.borderStyle || 'solid';
-
+  
   document.getElementById('bannerTextInput').oninput = (e) => { content.textContent = e.target.value; saveWorkspaceToStorage(); };
   document.getElementById('bannerBgColorInput').oninput = (e) => { banner.style.background = e.target.value; saveWorkspaceToStorage(); };
   document.getElementById('bannerTextColorInput').oninput = (e) => { content.style.color = e.target.value; saveWorkspaceToStorage(); };
@@ -217,14 +211,13 @@ function enableBannerEditing(banner) {
     saveWorkspaceToStorage();
   };
   document.getElementById('bannerBorderSelect').onchange = (e) => { banner.style.borderStyle = e.target.value; saveWorkspaceToStorage(); };
-
   document.getElementById('deleteBannerBtn').onclick = () => {
     banner.remove(); editPanel.style.display = 'none'; saveWorkspaceToStorage();
   };
 }
 //banner editor functions - end
 
-function saveWorkspaceToStorage() {
+function saveWorkspaceToStorage() {//save the workspace incase of reloading
   const workspace = document.getElementById('bannerWorkspace');
   if (workspace) {
     localStorage.setItem('currentWorkspaceContent', workspace.innerHTML);
@@ -268,7 +261,7 @@ function makeDraggable(element, workspace) {
 }
 function rgbToHex(rgb) {
   if (!rgb) return '#008cff';
-  const result = rgb.match(/\d+/g);
+  const result = rgb.match(/\d+/g);// /\d help find the numbers in the color array
   if (!result) return '#008cff';
   return "#" + result.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
 }
@@ -289,7 +282,6 @@ function loadLandingEditor() {
     </div>
   `;
 
-  // Click-to-add fallback (center of workspace)
   const ws = document.getElementById('bannerWorkspace');
   document.querySelectorAll('.landing-component').forEach(comp => {
     comp.addEventListener('click', () => {
@@ -379,7 +371,6 @@ function createLandingElement(type, workspace, x, y) {
   let el;
 
   if (type === 'image') {
-    // keep image path: use createImageElement
     createImageElement('https://via.placeholder.com/200', workspace, x, y);
     return;
   }
@@ -402,7 +393,7 @@ function createLandingElement(type, workspace, x, y) {
     workspace.appendChild(el);
     attachCommonChrome(el);
     makeDraggable(el, workspace);
-    // persist values
+    
     el.querySelectorAll('input, textarea').forEach(ctrl => {
       ctrl.addEventListener('input', () => {
         ctrl.setAttribute('value', ctrl.value);
@@ -413,7 +404,6 @@ function createLandingElement(type, workspace, x, y) {
     return;
   }
 
-  // Text-like: container + inner .editable
   el = document.createElement('div');
   el.classList.add('landing-element');
   el.style.left = x + 'px';
@@ -431,7 +421,7 @@ function createLandingElement(type, workspace, x, y) {
     editable.textContent = 'This is a text block. Click to edit me.';
   } else if (type === 'button') {
     editable.textContent = 'Click Me';
-    editable.classList.add('landing-button'); // keep your button styling
+    editable.classList.add('landing-button'); 
   }
 
   el.appendChild(editable);
@@ -440,7 +430,6 @@ function createLandingElement(type, workspace, x, y) {
   attachCommonChrome(el);
   makeDraggable(el, workspace);
 
-  // save on edits
   editable.addEventListener('input', saveWorkspaceToStorage);
 }
 function createImageElement(src, workspace, x, y){
@@ -457,11 +446,9 @@ function createImageElement(src, workspace, x, y){
 
   workspace.appendChild(img);
 
-  // add ✖ and ⠿ on images too
   attachCommonChrome(img);
   makeDraggable(img, workspace);
 
-  // click changes URL, optional:
   img.addEventListener('dblclick', (e)=>{
     e.stopPropagation();
     const newSrc = prompt("Enter new image URL:", img.src);
@@ -474,12 +461,11 @@ function createImageElement(src, workspace, x, y){
   saveWorkspaceToStorage();
 }
 function enableLandingEditing(element) {
-  if (element.tagName === 'IMG' || element.tagName === 'FORM') return; // handled elsewhere
+  if (element.tagName === 'IMG' || element.tagName === 'FORM') return; 
 
   const editable = element.querySelector('.editable');
   if (editable) {
     editable.focus();
-    // ensure it’s editable (in case it came from old saved content)
     editable.contentEditable = 'true';
     editable.addEventListener('input', saveWorkspaceToStorage);
   }
@@ -487,21 +473,14 @@ function enableLandingEditing(element) {
 let mkSavedRange = null;
 function normalizeLandingNodes(root = document) {
   root.querySelectorAll('.landing-element').forEach(el => {
-    // already normalized?
     if (el.querySelector('.editable')) return;
-
-    // if it's a FORM or IMG, leave as-is (not text-editable)
     if (el.tagName === 'FORM' || el.tagName === 'IMG') {
       attachCommonChrome(el);
       return;
     }
-
-    // move existing content into an .editable wrapper
     const editable = document.createElement('div');
     editable.className = 'editable';
     editable.contentEditable = 'true';
-
-    // move children/text into editable
     while (el.firstChild) editable.appendChild(el.firstChild);
     el.appendChild(editable);
 
@@ -538,7 +517,7 @@ function restoreMarketingSelection(canvas) {
   }
 }
 function loadMarketingEditor() {
-  activeDrop = null; // no DnD here
+  activeDrop = null; 
 
   const toolbar = document.querySelector('.editor-toolbar');
   if (!toolbar) return;
@@ -586,8 +565,6 @@ function loadMarketingEditor() {
 
   const existingCanvas = document.getElementById('emailCanvas');
   if (existingCanvas) bindMarketingSelectionMemory(existingCanvas);
-
-  // Templates (inject/replace inside the canvas, do NOT clear other workspace items)
   toolbar.querySelectorAll('.mk-btn[data-tpl]').forEach(btn => {
     btn.addEventListener('click', () => {
       const canvas = ensureEmailCanvas(ws);
@@ -597,8 +574,7 @@ function loadMarketingEditor() {
     });
   });
 
-  // Remove Template
-  document.getElementById('mkRemove').addEventListener('click', () => {
+  document.getElementById('mkRemove').addEventListener('click', () => {//template removal
     removeMarketingTemplate();
   });
 
@@ -779,12 +755,10 @@ function removeMarketingTemplate() {
     saveWorkspaceToStorage();
   }
 }
-/* Apply one of 3 templates INTO the existing marketing canvas */
 function applyTemplateIntoCanvas(n) {
   const c = document.getElementById('emailCanvas');
   if (!c) return;
 
-  // keep colors inherit so toolbar can recolor text
   const baseStyle = `style="margin:0 auto; width:650px; max-width:650px; background:#ffffff; color:inherit; font-family:inherit; line-height:1.5; padding:24px;"`;
 
   let html = '';
@@ -837,14 +811,13 @@ function applyTemplateIntoCanvas(n) {
   }
   c.innerHTML = html;
 
-  // normalize
+ 
   c.querySelectorAll('img').forEach(img => {
     img.style.cssText = 'max-width:100%; height:auto; display:block;';
   });
 
   saveWorkspaceToStorage();
 }
-/* Style current selection or current block */
 function applyInlineStyle(prop, value) {
   const canvas = document.getElementById('emailCanvas');
   const sel = window.getSelection();

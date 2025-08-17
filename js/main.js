@@ -16,7 +16,6 @@ function switchTab(tab, event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Switch between login and register tabs
     document.querySelectorAll('.login-tab').forEach(tab => {
         tab.addEventListener('click', (event) => {
             const selectedTab = event.target.innerText.toLowerCase();
@@ -66,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
 
-        // Automatically log in and go to dashboard
         localStorage.setItem('currentUser', JSON.stringify(newUser));
         window.location.href = "dashboard.html";
     });
