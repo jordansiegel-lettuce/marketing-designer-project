@@ -1,16 +1,18 @@
-let activeDrop = null;
+let activeDrop = null;//"mode switch"- tell the app which editor is active-> the drop handlers read this and to accept the drop
 const DEBUG_DND = false;
 const logDND = (...a) => DEBUG_DND && console.log('[DND]', ...a);
+  //cancel the browser default file opener on the page
 document.addEventListener('dragover', e => e.preventDefault(), { passive: false });
 document.addEventListener('drop',     e => e.preventDefault(), { passive: false });
+
+  //pulling current user from local storage, then wire the 3 editors
 document.addEventListener('DOMContentLoaded', () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
   document.getElementById('userName').textContent = currentUser?.username || "Guest";
-
   const bannerBtn = document.getElementById('bannerEditorBtn');
   const landingBtn = document.getElementById('landingEditorBtn');
   const marketingBtn = document.getElementById('marketingEditorBtn');
-
+  
   if (bannerBtn)  bannerBtn.addEventListener('click', loadBannerEditor);
   if (landingBtn) landingBtn.addEventListener('click', loadLandingEditor);
   if (marketingBtn) marketingBtn.addEventListener('click', loadMarketingEditor);
@@ -27,7 +29,7 @@ function saveHistory() {
   if (!workspace) return alert("No editor content found to save!");
 
   const rawName = prompt("Enter project name", "My project");
-    //if user clicked cancelm do nothing
+    //if user clicked cancel do nothing
   if (rawName === null) {
     return;
   }
@@ -49,7 +51,7 @@ function saveHistory() {
   localStorage.setItem('savedProjects', JSON.stringify(savedProjects));
   alert(`Project "${projectName}" saved to localStorage!`);
 }
-  //saved project loading
+  //saved projects loading
 function loadProject() {
   const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
   if (savedProjects.length === 0) return alert("No saved projects found!");
@@ -83,7 +85,6 @@ function loadProject() {
 //logout/saveing/and loading - end
 
 //banner editor functions - start
-
 function loadBannerEditor() {
   activeDrop = 'banner';
   const toolbar = document.querySelector('.editor-toolbar');
@@ -139,7 +140,7 @@ function setupBannerDragDrop() {
     e.preventDefault(); e.stopPropagation();//prevnting a trigger from the drop action
     e.dataTransfer.dropEffect = 'copy';
   };
- 
+  
   workspace.ondragenter = allow;
   workspace.ondragover  = allow;
 
@@ -153,6 +154,7 @@ function setupBannerDragDrop() {
     }
   };
 }
+
 function createBannerElement(size, workspace) {
   const banner = document.createElement('div');
   banner.classList.add('banner');
@@ -193,6 +195,7 @@ function createBannerElement(size, workspace) {
     enableBannerEditing(banner);
   });
 }
+  //populate the banner for editing
 function enableBannerEditing(banner) {
   const editPanel = document.querySelector('.banner-edit-panel');
   if (!editPanel) return;
@@ -239,33 +242,39 @@ function makeDraggable(element, workspace) {
   element.addEventListener('mousedown', (e) => {
    //if drag handle is being pressed allow drag
     const fromHandle = e.target.closest('.drag-handle');
+   //check click on image
     const isImageBody = e.target.tagName === 'IMG' && e.target.closest('.image-container');
     const isImageContainer = element.classList.contains('image-container') && e.target === element;
+   //checking interaction with the target, to allow typing and not drag.
     const interactive = e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName);
-   
+   //if no draggable interactions action are being done, dont drag
     if (!fromHandle && !isImageBody && !isImageContainer && !e.ctrlKey) {
       if (interactive) return;
       return;
     }
+    
     e.preventDefault();
     isDragging = true;
     offsetX = e.clientX - element.offsetLeft;
     offsetY = e.clientY - element.offsetTop;
     element.style.cursor = 'grabbing';
   });
+
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
+    //logs the new position for the element so the cursor stays at the relative point
     const x = e.clientX - offsetX;
     const y = e.clientY - offsetY;
-
+    //gives pixel boxes in the coordinates
     const wsRect = workspace.getBoundingClientRect();
     const elRect = element.getBoundingClientRect();
-
+    //keeps the element inside the workspace
     element.style.left = Math.max(0, Math.min(x, wsRect.width  - elRect.width)) + 'px';
     element.style.top  = Math.max(0, Math.min(y, wsRect.height - elRect.height)) + 'px';
   });
+  //save when action is drag
   document.addEventListener('mouseup', () => {
-    if (!isDragging) saveWorkspaceToStorage();
+    if (isDragging) saveWorkspaceToStorage();
     isDragging = false;
     element.style.cursor = 'grab';
   });
@@ -304,7 +313,7 @@ function setupLandingClickHandlers() {
   const components = document.querySelectorAll('.landing-component');
   const workspace = document.getElementById('bannerWorkspace');
   if (!workspace) return;
-
+  //make sure components arent being inserted twice
   let lastClickTime = 0;
   const CLICK_DEBOUNCE = 500; // 500ms debounce
 
@@ -563,7 +572,10 @@ function normalizeLandingNodes(root = document) {
 
 
 //marketing editor functins - start
-function bindMarketingSelectionMemory(canvas) {
+
+  
+function bindMarketingSelectionMemory(canvas) {/*watch the user text selection inside the email canvas a
+  and store in mkSavedRange*/
   if (!canvas) return;
   const save = () => {
     const sel = window.getSelection();
@@ -580,6 +592,7 @@ function bindMarketingSelectionMemory(canvas) {
     }
   });
 }
+  //put the selection back before formatting
 function restoreMarketingSelection(canvas) {
   const sel = window.getSelection();
   if (mkSavedRange) {
@@ -589,6 +602,7 @@ function restoreMarketingSelection(canvas) {
     canvas.focus();
   }
 }
+  //set the toolbar and wire all buttons
 function loadMarketingEditor() {
   activeDrop = null;
 
@@ -636,8 +650,10 @@ function loadMarketingEditor() {
 
   const ws = document.getElementById('bannerWorkspace');
 
+  //if canvas already exists hook selection memory to it
   const existingCanvas = document.getElementById('emailCanvas');
   if (existingCanvas) bindMarketingSelectionMemory(existingCanvas);
+    //template buttons - create canva - inject template-save
   toolbar.querySelectorAll('.mk-btn[data-tpl]').forEach(btn => {
     btn.addEventListener('click', () => {
       const canvas = ensureEmailCanvas(ws);
@@ -646,13 +662,13 @@ function loadMarketingEditor() {
       saveWorkspaceToStorage();
     });
   });
-
+    //remove template
   document.getElementById('mkRemove').addEventListener('click', () => {//template removal
     removeMarketingTemplate();
   });
-
+    //prefer css output for execCommand where supported
   try { document.execCommand('styleWithCSS', true); } catch (_) {}
-
+  //inline formatting buttons
   toolbar.querySelectorAll('.mk-btn[data-cmd]').forEach(btn => {
     btn.addEventListener('click', () => {
       const c = document.getElementById('emailCanvas');
@@ -662,7 +678,7 @@ function loadMarketingEditor() {
       saveWorkspaceToStorage();
     });
   });
-
+  //block format
   document.getElementById('mkHeading').addEventListener('change', (e) => {
     const c = document.getElementById('emailCanvas');
     if (!c) return;
@@ -670,7 +686,7 @@ function loadMarketingEditor() {
     document.execCommand('formatBlock', false, e.target.value);
     saveWorkspaceToStorage();
   });
-
+  //fonts sizes
   const fontSizeEl = document.getElementById('mkFontSize');
   const applySize = () => {
     const c = document.getElementById('emailCanvas');
@@ -680,7 +696,7 @@ function loadMarketingEditor() {
   };
   fontSizeEl.addEventListener('input', applySize);
   fontSizeEl.addEventListener('change', applySize);
-
+  //fonts family
   const fontFamilyEl = document.getElementById('mkFontFamily');
   fontFamilyEl.addEventListener('change', () => {
     const c = document.getElementById('emailCanvas');
@@ -688,7 +704,7 @@ function loadMarketingEditor() {
     restoreMarketingSelection(c);
     applyInlineStyle('fontFamily', fontFamilyEl.value);
   });
-
+  //text color
   document.getElementById('mkTextColor').addEventListener('input', (e) => {
     const c = document.getElementById('emailCanvas');
     if (!c) return;
@@ -696,12 +712,12 @@ function loadMarketingEditor() {
     document.execCommand('foreColor', false, e.target.value);
     saveWorkspaceToStorage();
   });
-
+  //canvas background
   document.getElementById('mkBgColor').addEventListener('input', (e) => {
     const c = document.getElementById('emailCanvas');
     if (c) { c.style.background = e.target.value; saveWorkspaceToStorage(); }
   });
-
+  //img insert
   document.getElementById('mkInsertImage').addEventListener('click', () => {
     const url = prompt('Image URL:');
     if (!url) return;
@@ -714,13 +730,13 @@ function loadMarketingEditor() {
     if (img) img.style.cssText = 'max-width:100%; height:auto; display:block;';
     saveWorkspaceToStorage();
   });
-
+  //save
   document.getElementById('mkSave').addEventListener('click', () => {
     saveHistory();
   });
 }
 
-// UNIFIED CHROME FUNCTIONS s
+  //draghandle
 function addDragHandle(el) {
   if (el.querySelector('.drag-handle')) return;
 
@@ -747,7 +763,7 @@ function addDragHandle(el) {
   el.style.position = 'absolute';
   el.appendChild(h);
 }
-
+  //delete button
 function addDeleteButton(el) {
   if (el.querySelector('.element-delete-btn')) return;
 
@@ -781,12 +797,12 @@ function addDeleteButton(el) {
 
   el.appendChild(b);
 }
-
+//helper for attaching above buttons
 function attachCommonChrome(el) {
   addDeleteButton(el);
   addDragHandle(el);
 }
-
+  
 function ensureEmailCanvas(workspace) {
   let canvas = document.getElementById('emailCanvas');
   if (canvas) return canvas;
@@ -803,6 +819,7 @@ function ensureEmailCanvas(workspace) {
   bindMarketingSelectionMemory(canvas);
   return canvas;
 }
+  //remove canvas, clear mkSavedRange
 function removeMarketingTemplate() {
   const canvas = document.getElementById('emailCanvas');
   if (canvas && canvas.parentElement) {
@@ -811,6 +828,7 @@ function removeMarketingTemplate() {
     saveWorkspaceToStorage();
   }
 }
+  //injects one of 3 templates into exitisng emailCanvas
 function applyTemplateIntoCanvas(n) {
   const c = document.getElementById('emailCanvas');
   if (!c) return;
@@ -873,6 +891,7 @@ function applyTemplateIntoCanvas(n) {
 
   saveWorkspaceToStorage();
 }
+  //helper-to change the text style and if no text is highlighted - apply style to whole block
 function applyInlineStyle(prop, value) {
   const canvas = document.getElementById('emailCanvas');
   const sel = window.getSelection();
