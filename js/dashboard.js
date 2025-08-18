@@ -60,7 +60,7 @@ function loadProject() {
   });
 
   const rawChoice = prompt(message, "1");
-  if (rawChoice === null) return; 
+  if (rawChoice === null) return;
 
   const choice = parseInt(rawChoice, 10) - 1;
   if (isNaN(choice) || choice < 0 || choice >= savedProjects.length) {
@@ -120,7 +120,7 @@ function loadBannerEditor() {
   `;
   setupBannerDragDrop();
 }
-  
+ 
 function setupBannerDragDrop() {
   const bannerShapes = document.querySelectorAll('.banner-shape');//data being put on draggable element
   const workspace = document.getElementById('bannerWorkspace');//setting a dropable target
@@ -139,7 +139,7 @@ function setupBannerDragDrop() {
     e.preventDefault(); e.stopPropagation();//prevnting a trigger from the drop action
     e.dataTransfer.dropEffect = 'copy';
   };
-  
+ 
   workspace.ondragenter = allow;
   workspace.ondragover  = allow;
 
@@ -183,7 +183,7 @@ function createBannerElement(size, workspace) {
 
   banner.appendChild(content);
   workspace.appendChild(banner);
-  attachCommonChrome(banner);// delete and drag placed on object           
+  attachCommonChrome(banner);// delete and drag placed on object          
   makeDraggable(banner, workspace);// ^
 
   content.addEventListener('input', saveWorkspaceToStorage);
@@ -205,7 +205,7 @@ function enableBannerEditing(banner) {
   document.getElementById('bannerFontSizeInput').value  = parseInt(getComputedStyle(content).fontSize) || 12;
   document.getElementById('bannerFontStyleSelect').value = content.style.fontStyle || 'normal';
   document.getElementById('bannerBorderSelect').value    = banner.style.borderStyle || 'solid';
-  
+ 
   document.getElementById('bannerTextInput').oninput = (e) => { content.textContent = e.target.value; saveWorkspaceToStorage(); };
   document.getElementById('bannerBgColorInput').oninput = (e) => { banner.style.background = e.target.value; saveWorkspaceToStorage(); };
   document.getElementById('bannerTextColorInput').oninput = (e) => { content.style.color = e.target.value; saveWorkspaceToStorage(); };
@@ -229,15 +229,21 @@ function saveWorkspaceToStorage() {//save the workspace incase of reloading
   }
 }
 function makeDraggable(element, workspace) {
+  
   element.setAttribute('draggable', 'false');
   element.addEventListener('dragstart', (e) => e.preventDefault());
+ 
   let isDragging = false;
   let offsetX = 0, offsetY = 0;
+  
   element.addEventListener('mousedown', (e) => {
+   //if drag handle is being pressed allow drag
     const fromHandle = e.target.closest('.drag-handle');
-    const isImageBody = element.tagName === 'IMG' && e.target === element;
+    const isImageBody = e.target.tagName === 'IMG' && e.target.closest('.image-container');
+    const isImageContainer = element.classList.contains('image-container') && e.target === element;
     const interactive = e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName);
-    if (!fromHandle && !isImageBody && !e.ctrlKey) {
+   
+    if (!fromHandle && !isImageBody && !isImageContainer && !e.ctrlKey) {
       if (interactive) return;
       return;
     }
@@ -259,7 +265,7 @@ function makeDraggable(element, workspace) {
     element.style.top  = Math.max(0, Math.min(y, wsRect.height - elRect.height)) + 'px';
   });
   document.addEventListener('mouseup', () => {
-    if (isDragging) saveWorkspaceToStorage();
+    if (!isDragging) saveWorkspaceToStorage();
     isDragging = false;
     element.style.cursor = 'grab';
   });
@@ -270,6 +276,7 @@ function rgbToHex(rgb) {
   if (!result) return '#008cff';
   return "#" + result.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
 }
+
 //landing editor functions - start
 function loadLandingEditor() {
   activeDrop = 'landing';
@@ -279,49 +286,98 @@ function loadLandingEditor() {
   toolbar.innerHTML = `
     <h2>Landing Page Editor</h2>
     <div class="landing-toolbar">
-      <div class="landing-component" draggable="true" data-type="heading">Heading</div>
-      <div class="landing-component" draggable="true" data-type="paragraph">Text Block</div>
-      <div class="landing-component" draggable="true" data-type="image">Image</div>
-      <div class="landing-component" draggable="true" data-type="button">Button</div>
-      <div class="landing-component" draggable="true" data-type="form">Form</div>
+      <div class="landing-component" data-type="heading">Heading</div>
+      <div class="landing-component" data-type="paragraph">Text Block</div>
+      <div class="landing-component" data-type="image">Image</div>
+      <div class="landing-component" data-type="button">Button</div>
+      <div class="landing-component" data-type="form">Form</div>
     </div>
   `;
 
-  const ws = document.getElementById('bannerWorkspace');
-  document.querySelectorAll('.landing-component').forEach(comp => {
-    comp.addEventListener('click', () => {
-      if (!ws) return;
-      const rect = ws.getBoundingClientRect();
-      const x = ws.scrollLeft + rect.width / 2 - 120;
-      const y = ws.scrollTop  + rect.height / 2 - 40;
-      const t = comp.dataset.type;
-      if (t === 'image') {
-        createImageElement('https://via.placeholder.com/200', ws, x, y);
+  // Add click functionality with debouncing to prevent duplicates
+  setupLandingClickHandlers();
+  setupLandingDragDrop();
+  normalizeLandingNodes(document.getElementById('bannerWorkspace'));
+}
+
+function setupLandingClickHandlers() {
+  const components = document.querySelectorAll('.landing-component');
+  const workspace = document.getElementById('bannerWorkspace');
+  if (!workspace) return;
+
+  let lastClickTime = 0;
+  const CLICK_DEBOUNCE = 500; // 500ms debounce
+
+  components.forEach(comp => {
+    comp.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+     
+      const now = Date.now();
+      if (now - lastClickTime < CLICK_DEBOUNCE) {
+        return; // Ignore rapid clicks
+      }
+      lastClickTime = now;
+
+      const rect = workspace.getBoundingClientRect();
+      const x = Math.random() * (rect.width - 200) + 50; // Random position
+      const y = Math.random() * (rect.height - 100) + 50;
+     
+      const type = comp.dataset.type;
+      if (type === 'image') {
+        createImageElement('https://via.placeholder.com/200', workspace, x, y);
       } else {
-        createLandingElement(t, ws, x, y);
+        createLandingElement(type, workspace, x, y);
       }
       saveWorkspaceToStorage();
     });
   });
-
-  setupLandingDragDrop();
-  normalizeLandingNodes(document.getElementById('bannerWorkspace'));
-
 }
-normalizeLandingNodes(document.getElementById('bannerWorkspace'));
+
 function setupLandingDragDrop() {
   const components = document.querySelectorAll('.landing-component');
   const workspace = document.getElementById('bannerWorkspace');
   if (!workspace) return;
 
+  let isDragStarted = false;
+  let dragTimeout = null;
+
   components.forEach(comp => {
+    // Prevent accidental drags from clicks
+    comp.addEventListener('mousedown', (e) => {
+      isDragStarted = false;
+      // Only start drag if user actually drags (moves mouse while holding down)
+      dragTimeout = setTimeout(() => {
+        isDragStarted = true;
+      }, 150); // 150ms delay before allowing drag
+    });
+
+    comp.addEventListener('mouseup', () => {
+      clearTimeout(dragTimeout);
+      isDragStarted = false;
+    });
+
+    comp.addEventListener('mouseleave', () => {
+      clearTimeout(dragTimeout);
+    });
+
     comp.addEventListener('dragstart', (e) => {
+      if (!isDragStarted) {
+        e.preventDefault();
+        return false;
+      }
+     
       const t = comp.dataset.type;
       e.dataTransfer.setData('text/plain', t);
       e.dataTransfer.setData('application/x-landing-type', t);
       e.dataTransfer.setData('landingType', t);
       e.dataTransfer.effectAllowed = 'copy';
       logDND('dragstart', t);
+    });
+
+    comp.addEventListener('dragend', () => {
+      isDragStarted = false;
+      clearTimeout(dragTimeout);
     });
   });
 
@@ -372,6 +428,7 @@ function setupLandingDragDrop() {
     saveWorkspaceToStorage();
   }, true);
 }
+
 function createLandingElement(type, workspace, x, y) {
   let el;
 
@@ -398,7 +455,7 @@ function createLandingElement(type, workspace, x, y) {
     workspace.appendChild(el);
     attachCommonChrome(el);
     makeDraggable(el, workspace);
-    
+   
     el.querySelectorAll('input, textarea').forEach(ctrl => {
       ctrl.addEventListener('input', () => {
         ctrl.setAttribute('value', ctrl.value);
@@ -426,7 +483,7 @@ function createLandingElement(type, workspace, x, y) {
     editable.textContent = 'This is a text block. Click to edit me.';
   } else if (type === 'button') {
     editable.textContent = 'Click Me';
-    editable.classList.add('landing-button'); 
+    editable.classList.add('landing-button');
   }
 
   el.appendChild(editable);
@@ -437,22 +494,30 @@ function createLandingElement(type, workspace, x, y) {
 
   editable.addEventListener('input', saveWorkspaceToStorage);
 }
+
 function createImageElement(src, workspace, x, y){
+  // Create a container div for the image to hold the chrome elements
+  const container = document.createElement('div');
+  container.classList.add('landing-element', 'image-container');
+  container.style.position = 'absolute';
+  container.style.left = x + 'px';
+  container.style.top = y + 'px';
+  container.style.display = 'inline-block';
+  container.style.cursor = 'grab';
+
   const img = document.createElement('img');
   img.src = src;
   img.alt = "Image";
-  img.classList.add('landing-element');
-  img.style.position = 'absolute';
-  img.style.left = x + 'px';
-  img.style.top  = y + 'px';
   img.style.width = '200px';
-  img.style.cursor = 'grab';
+  img.style.height = 'auto';
+  img.style.display = 'block';
   img.setAttribute('draggable', 'false');
 
-  workspace.appendChild(img);
+  container.appendChild(img);
+  workspace.appendChild(container);
 
-  attachCommonChrome(img);
-  makeDraggable(img, workspace);
+  attachCommonChrome(container);
+  makeDraggable(container, workspace);
 
   img.addEventListener('dblclick', (e)=>{
     e.stopPropagation();
@@ -465,8 +530,9 @@ function createImageElement(src, workspace, x, y){
 
   saveWorkspaceToStorage();
 }
+
 function enableLandingEditing(element) {
-  if (element.tagName === 'IMG' || element.tagName === 'FORM') return; 
+  if (element.tagName === 'IMG' || element.tagName === 'FORM') return;
 
   const editable = element.querySelector('.editable');
   if (editable) {
@@ -475,6 +541,7 @@ function enableLandingEditing(element) {
     editable.addEventListener('input', saveWorkspaceToStorage);
   }
 }
+
 let mkSavedRange = null;
 function normalizeLandingNodes(root = document) {
   root.querySelectorAll('.landing-element').forEach(el => {
@@ -492,7 +559,7 @@ function normalizeLandingNodes(root = document) {
     attachCommonChrome(el);
   });
 }
-  //landing editor functions - end
+//landing editor functions - end
 
 
 //marketing editor functins - start
@@ -523,7 +590,7 @@ function restoreMarketingSelection(canvas) {
   }
 }
 function loadMarketingEditor() {
-  activeDrop = null; 
+  activeDrop = null;
 
   const toolbar = document.querySelector('.editor-toolbar');
   if (!toolbar) return;
@@ -652,6 +719,8 @@ function loadMarketingEditor() {
     saveHistory();
   });
 }
+
+// UNIFIED CHROME FUNCTIONS s
 function addDragHandle(el) {
   if (el.querySelector('.drag-handle')) return;
 
@@ -675,14 +744,10 @@ function addDragHandle(el) {
     zIndex: '3'
   });
 
-  
   el.style.position = 'absolute';
   el.appendChild(h);
 }
-function attachCommonChrome(el) {
-  addDeleteButton(el);
-  addDragHandle(el);
-}
+
 function addDeleteButton(el) {
   if (el.querySelector('.element-delete-btn')) return;
 
@@ -716,27 +781,12 @@ function addDeleteButton(el) {
 
   el.appendChild(b);
 }
+
 function attachCommonChrome(el) {
   addDeleteButton(el);
   addDragHandle(el);
 }
-function addDeleteButton(el) {
-  if (el.querySelector('.element-delete-btn')) return;
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'element-delete-btn';
-  b.textContent = '✖';
-  b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    el.remove();
-    saveWorkspaceToStorage();
-  });
-  el.appendChild(b);
-}
-function attachCommonChrome(el) {
-  addDeleteButton(el);
-  addDragHandle(el);
-}
+
 function ensureEmailCanvas(workspace) {
   let canvas = document.getElementById('emailCanvas');
   if (canvas) return canvas;
@@ -817,7 +867,6 @@ function applyTemplateIntoCanvas(n) {
   }
   c.innerHTML = html;
 
- 
   c.querySelectorAll('img').forEach(img => {
     img.style.cssText = 'max-width:100%; height:auto; display:block;';
   });

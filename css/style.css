@@ -585,8 +585,13 @@ button:active {
   white-space:pre-wrap;
   overflow-wrap:anywhere;
 }
-.workspace .landing-element .drag-handle,
-.workspace .landing-element .element-delete-btn {
+.workspace .landing-element .drag-handle{
   /* already positioned in JS; keep them above content */
   pointer-events:auto;
+  width: 50px;
+}
+
+.workspace .landing-element .element-delete-btn {
+    pointer-events: auto;
+    width:20px;
 }
