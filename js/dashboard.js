@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (landingBtn) landingBtn.addEventListener('click', loadLandingEditor);
   if (marketingBtn) marketingBtn.addEventListener('click', loadMarketingEditor);
 });
-//logout/saveing/and loading - start
+
+  //logout/saveing/and loading - start
 function Logout() {
   localStorage.removeItem('currentUser');
   window.location.href = "index.html";
@@ -26,7 +27,7 @@ function saveHistory() {
   if (!workspace) return alert("No editor content found to save!");
 
   const rawName = prompt("Enter project name", "My project");
- 
+    //if user clicked cancelm do nothing
   if (rawName === null) {
     return;
   }
@@ -36,6 +37,7 @@ function saveHistory() {
     return;
   }
   const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');//saved project array
+
   const projectData = {
     id: Date.now() + '-' + Math.floor(Math.random() * 1000),
     user: currentUser.username,
@@ -47,6 +49,7 @@ function saveHistory() {
   localStorage.setItem('savedProjects', JSON.stringify(savedProjects));
   alert(`Project "${projectName}" saved to localStorage!`);
 }
+  //saved project loading
 function loadProject() {
   const savedProjects = JSON.parse(localStorage.getItem('savedProjects') || '[]');
   if (savedProjects.length === 0) return alert("No saved projects found!");
@@ -117,11 +120,12 @@ function loadBannerEditor() {
   `;
   setupBannerDragDrop();
 }
+  
 function setupBannerDragDrop() {
-  const bannerShapes = document.querySelectorAll('.banner-shape');
-  const workspace = document.getElementById('bannerWorkspace');
+  const bannerShapes = document.querySelectorAll('.banner-shape');//data being put on draggable element
+  const workspace = document.getElementById('bannerWorkspace');//setting a dropable target
   if (!workspace) return;
-
+  //storing the size and type upon dragging action
   bannerShapes.forEach(shape => {
     shape.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('bannerType', 'new');
@@ -129,15 +133,16 @@ function setupBannerDragDrop() {
       e.dataTransfer.effectAllowed = 'copy';
     });
   });
-
+  //allow the workspace accept a drop
   const allow = (e) => {
     if (activeDrop !== 'banner') return;
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();//prevnting a trigger from the drop action
     e.dataTransfer.dropEffect = 'copy';
   };
-
+  
   workspace.ondragenter = allow;
   workspace.ondragover  = allow;
+
   workspace.ondrop = (e) => {// creates a benner with the matching function on drop
     if (activeDrop !== 'banner') return;
     e.preventDefault(); e.stopPropagation();
@@ -178,8 +183,8 @@ function createBannerElement(size, workspace) {
 
   banner.appendChild(content);
   workspace.appendChild(banner);
-  attachCommonChrome(banner);           
-  makeDraggable(banner, workspace);
+  attachCommonChrome(banner);// delete and drag placed on object           
+  makeDraggable(banner, workspace);// ^
 
   content.addEventListener('input', saveWorkspaceToStorage);
  
@@ -487,7 +492,8 @@ function normalizeLandingNodes(root = document) {
     attachCommonChrome(el);
   });
 }
-//landing editor functions - end
+  //landing editor functions - end
+
 
 //marketing editor functins - start
 function bindMarketingSelectionMemory(canvas) {
