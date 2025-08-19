@@ -568,10 +568,9 @@ function normalizeLandingNodes(root = document) {
     attachCommonChrome(el);
   });
 }
-//landing editor functions - end
+  //landing editor functions - end
 
-
-//marketing editor functins - start
+  //marketing editor functins - start
 
   
 function bindMarketingSelectionMemory(canvas) {/*watch the user text selection inside the email canvas a
